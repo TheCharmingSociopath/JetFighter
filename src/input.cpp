@@ -2,6 +2,7 @@
 #include <cmath>
 #include <fstream>
 #include <vector>
+#define GLM_ENABLE_EXPERIMENTAL
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -52,8 +53,8 @@ void keyboard(GLFWwindow *window, int key, int scancode, int action, int mods) {
 /* Executed for character input (like in text boxes) */
 void keyboardChar(GLFWwindow *window, unsigned int key) {
     switch (key) {
-    case 'Q':
-    case 'q':
+    case 'P':
+    case 'p':
         quit(window);
         break;
     default:

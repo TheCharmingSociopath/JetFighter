@@ -1,6 +1,9 @@
 #include "main.h"
 #include "timer.h"
-#include "ball.h"
+#include "airplane.h"
+#include "sphere.h"
+#include "sea.h"
+#define GLM_ENABLE_EXPERIMENTAL
 
 using namespace std;
 
@@ -8,15 +11,23 @@ GLMatrices Matrices;
 GLuint     programID;
 GLFWwindow *window;
 
-/**************************
-* Customizable functions *
-**************************/
+Airplane plane;
+Sea sea;
 
-Ball ball1;
-
-float screen_zoom = 1, screen_center_x = 0, screen_center_y = 0;
-float camera_rotation_angle = 0;
-
+float jet_x = 0, jet_y = 30, jet_z = 0, jet_rot_x = 0, jet_rot_y = 0, jet_rot_z = 1;
+float screen_center_x = jet_x, screen_center_y = jet_y, screen_center_z = jet_z;
+float camera_center_x = 0, camera_center_y = 40, camera_center_z = -10;
+float up_x = 0, up_y = 1, up_z = 0;
+float camera_rotation_angle = 0, screen_zoom = 1;
+float fovy = 45.0f, aspect = 1.0f, zNear = 0.1f, zFar = 500.0f;
+int camera_modes = 0;
+/*  0: follow-cam view
+    1: tower view
+    2: top view
+    3: plane view
+    4: helicopter-cam view
+*/
+bool cam_press;
 Timer t60(1.0 / 60);
 
 /* Render the scene with openGL */
@@ -30,11 +41,11 @@ void draw() {
     glUseProgram (programID);
 
     // Eye - Location of camera. Don't change unless you are sure!!
-    glm::vec3 eye ( 5*cos(camera_rotation_angle*M_PI/180.0f), 0, 5*sin(camera_rotation_angle*M_PI/180.0f) );
+    glm::vec3 eye ( camera_center_x, camera_center_y, camera_center_z );
     // Target - Where is the camera looking at.  Don't change unless you are sure!!
-    glm::vec3 target (0, 0, 0);
+    glm::vec3 target (screen_center_x, screen_center_y, screen_center_z);
     // Up - Up vector defines tilt of camera.  Don't change unless you are sure!!
-    glm::vec3 up (0, 1, 0);
+    glm::vec3 up (up_x, up_y, up_z);
 
     // Compute Camera matrix (view)
     Matrices.view = glm::lookAt( eye, target, up ); // Rotating Camera for 3D
@@ -51,20 +62,61 @@ void draw() {
     glm::mat4 MVP;  // MVP = Projection * View * Model
 
     // Scene render
-    ball1.draw(VP);
+    sea.draw(VP);
+    plane.draw(VP, jet_rot_x, jet_rot_y, jet_rot_z);
 }
 
 void tick_input(GLFWwindow *window) {
-    int left  = glfwGetKey(window, GLFW_KEY_LEFT);
-    int right = glfwGetKey(window, GLFW_KEY_RIGHT);
+    int left  = glfwGetKey(window, GLFW_KEY_A);
+    int right = glfwGetKey(window, GLFW_KEY_D);
+    int forward = glfwGetKey(window, GLFW_KEY_W);
+    int back = glfwGetKey(window, GLFW_KEY_S);
+    int q = glfwGetKey(window, GLFW_KEY_Q);
+    int e = glfwGetKey(window, GLFW_KEY_E);
+    int cam = glfwGetKey(window, GLFW_KEY_C);
+    int down = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT);
+    int up = glfwGetKey(window, GLFW_KEY_SPACE);
+
     if (left) {
-        // Do something
+        plane.rotation.z -= 0.5f;
+    }
+    if (right) {
+        plane.rotation.z += 0.5f;
+    }
+    if (forward) {
+        jet_z += 0.2 * cos(plane.rotation.y * M_PI/180.0f);
+        jet_x += 0.2 * sin(plane.rotation.y * M_PI/180.0f);
+    }
+    if (back) {
+        jet_z -= 0.2 * cos(plane.rotation.y * M_PI/180.0f);
+        jet_x -= 0.2 * sin(plane.rotation.y * M_PI/180.0f);
+    }
+    if (up) {
+        jet_y += 0.2;
+    }
+    if (down) {
+        jet_y -= 0.2;
+    }
+    if (q) {
+        plane.rotation.y += 0.5f;
+    }
+    if (e) {
+        plane.rotation.y -= 0.5f;
+    }
+    if (cam) {
+        cam_press = true;
+    }
+    else if (cam_press) {
+        camera_modes = (camera_modes + 1) % 4;
+        cam_press = false;
     }
 }
 
 void tick_elements() {
-    ball1.tick();
-    camera_rotation_angle += 1;
+    plane.tick();
+    camera_tick();
+    plane.set_position(jet_x, jet_y, jet_z);
+    sea.tick();
 }
 
 /* Initialize the OpenGL rendering properties */
@@ -73,13 +125,13 @@ void initGL(GLFWwindow *window, int width, int height) {
     /* Objects should be created before any other gl function and shaders */
     // Create the models
 
-    ball1       = Ball(0, 0, COLOR_RED);
+    plane = Airplane(jet_x, jet_y, jet_z, COLOR_RED, 5, 0, 1, 4);
+    sea = Sea(0, 0, 0, COLOR_SEA);
 
     // Create and compile our GLSL program from the shaders
     programID = LoadShaders("Sample_GL.vert", "Sample_GL.frag");
     // Get a handle for our "MVP" uniform
     Matrices.MatrixID = glGetUniformLocation(programID, "MVP");
-
 
     reshapeWindow (window, width, height);
 
@@ -95,7 +147,6 @@ void initGL(GLFWwindow *window, int width, int height) {
     cout << "VERSION: " << glGetString(GL_VERSION) << endl;
     cout << "GLSL: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << endl;
 }
-
 
 int main(int argc, char **argv) {
     srand(time(0));
@@ -117,8 +168,8 @@ int main(int argc, char **argv) {
             // Swap Frame Buffer in double buffering
             glfwSwapBuffers(window);
 
-            tick_elements();
             tick_input(window);
+            tick_elements();
         }
 
         // Poll for Keyboard and mouse events
@@ -138,5 +189,88 @@ void reset_screen() {
     float bottom = screen_center_y - 4 / screen_zoom;
     float left   = screen_center_x - 4 / screen_zoom;
     float right  = screen_center_x + 4 / screen_zoom;
-    Matrices.projection = glm::ortho(left, right, bottom, top, 0.1f, 500.0f);
+    Matrices.projection = glm::perspective(fovy, aspect, zNear, zFar);
+}
+
+/*  0: follow-cam view
+    1: tower view
+    2: top view
+    3: plane view
+    4: helicopter-cam view
+*/
+
+void camera_tick()
+{
+    cout << "CM " << camera_modes << endl;
+    switch (camera_modes) //screen center
+    {
+        case 0:
+            screen_center_x = jet_x;
+            screen_center_y = jet_y + 5;
+            screen_center_z = jet_z;
+            break;
+        case 1:
+            screen_center_x = jet_x;
+            screen_center_y = jet_y + 10;
+            screen_center_z = jet_z + 5;
+            break;
+        case 2:
+            screen_center_x = jet_x;
+            screen_center_y = jet_y;
+            screen_center_z = jet_z;
+            break;
+        case 3:
+            screen_center_x = jet_x;
+            screen_center_y = jet_y;
+            screen_center_z = jet_z + 10;
+            break;
+        case 4:
+            break;
+    }
+
+    switch (camera_modes) //up
+    {
+        case 0:
+        case 1:
+        case 3:
+        case 4:
+            up_x = 0;
+            up_y = 1;
+            up_z = 0;
+            break;
+        case 2:
+            up_x = 0;
+            up_y = 0;
+            up_z = 1;
+            break;
+    }
+
+    switch (camera_modes) //camera center
+    {
+        case 0:
+            camera_center_x = jet_x;
+            camera_center_y = jet_y + 10;
+            camera_center_z = jet_z - 20;
+            break;
+        case 1:
+            camera_center_x = jet_x + 20;
+            camera_center_y = jet_y + 20;
+            camera_center_z = jet_z - 20;
+            break;
+        case 2:
+            camera_center_x = jet_x;
+            camera_center_y = jet_y + 50;
+            camera_center_z = jet_z;
+            break;
+        case 3:
+            camera_center_x = jet_x;
+            camera_center_y = jet_y;
+            camera_center_z = jet_z + (plane.length / 2);
+            break;
+        case 4:
+            /* code */
+            break;
+    }
+    // cout << "CC " <<  camera_center_x << " " << camera_center_y <<  " " << camera_center_z << endl;
+    // cout << "SC " << screen_center_x << " " << screen_center_y <<  " " << screen_center_z << endl;
 }
