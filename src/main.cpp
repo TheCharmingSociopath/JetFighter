@@ -3,6 +3,7 @@
 #include "airplane.h"
 #include "sphere.h"
 #include "sea.h"
+#include "island.h"
 #define GLM_ENABLE_EXPERIMENTAL
 
 using namespace std;
@@ -13,6 +14,7 @@ GLFWwindow *window;
 
 Airplane plane;
 Sea sea;
+vector <Island> islands;
 
 float jet_x = 0, jet_y = 30, jet_z = 0, jet_rot_x = 0, jet_rot_y = 0, jet_rot_z = 1;
 float screen_center_x = jet_x, screen_center_y = jet_y, screen_center_z = jet_z;
@@ -64,6 +66,8 @@ void draw() {
     // Scene render
     sea.draw(VP);
     plane.draw(VP, jet_rot_x, jet_rot_y, jet_rot_z);
+    for (int i=0; i<islands.size(); ++i)
+        islands[i].draw(VP);
 }
 
 void tick_input(GLFWwindow *window) {
@@ -117,6 +121,11 @@ void tick_elements() {
     camera_tick();
     plane.set_position(jet_x, jet_y, jet_z);
     sea.tick();
+    for (int i=0; i<islands.size(); ++i)
+    {
+        islands[i].tick();
+    }
+    generate_objects();
 }
 
 /* Initialize the OpenGL rendering properties */
@@ -127,6 +136,7 @@ void initGL(GLFWwindow *window, int width, int height) {
 
     plane = Airplane(jet_x, jet_y, jet_z, COLOR_RED, 5, 0, 1, 4);
     sea = Sea(0, 0, 0, COLOR_SEA);
+    islands.push_back( Island(jet_x, jet_z + 50, COLOR_ISLAND) );
 
     // Create and compile our GLSL program from the shaders
     programID = LoadShaders("Sample_GL.vert", "Sample_GL.frag");
@@ -273,4 +283,12 @@ void camera_tick()
     }
     // cout << "CC " <<  camera_center_x << " " << camera_center_y <<  " " << camera_center_z << endl;
     // cout << "SC " << screen_center_x << " " << screen_center_y <<  " " << screen_center_z << endl;
+}
+
+void generate_objects()
+{
+    for (int i=0; i<4000; i += 25)
+    {
+        islands.push_back(Island (i * 25, i * 25, COLOR_ISLAND));
+    }
 }

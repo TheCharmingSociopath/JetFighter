@@ -77,6 +77,7 @@ bool detect_collision(bounding_box_t a, bounding_box_t b);
 extern float screen_zoom, screen_center_x, screen_center_y;
 void reset_screen();
 void camera_tick();
+void generate_objects();
 
 // ---- Colors ----
 extern const color_t COLOR_RED;
@@ -84,5 +85,8 @@ extern const color_t COLOR_GREEN;
 extern const color_t COLOR_BLACK;
 extern const color_t COLOR_BACKGROUND;
 extern const color_t COLOR_SEA;
+extern const color_t COLOR_ISLAND;
+extern const color_t COLOR_GUN;
+extern const color_t COLOR_STAND;
 
 #endif
