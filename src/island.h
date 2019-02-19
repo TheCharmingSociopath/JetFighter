@@ -10,8 +10,10 @@ public:
     Island() {}
     Island(float x, float z, color_t color);
     glm::vec3 position;
-    float radius = 50, y = -48, rotation;
+    float radius = 50, y = -40, rotation;
+    int activation_time = 0;
     Sphere sphere;
+    bool active = false;
     Frustum stand, gun;
     void draw(glm::mat4 VP);
     void set_position(float x, float y, float z);

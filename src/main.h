@@ -54,6 +54,7 @@ typedef struct VAO VAO;
 
 struct GLMatrices {
     glm::mat4 projection;
+    glm::mat4 ortho_projection;
     glm::mat4 model;
     glm::mat4 view;
     GLuint    MatrixID;
@@ -68,8 +69,10 @@ enum direction_t { DIR_UP, DIR_RIGHT, DIR_DOWN, DIR_LEFT };
 struct bounding_box_t {
     float x;
     float y;
-    float width;
-    float height;
+    float z;
+    float len_x;
+    float len_y;
+    float len_z;
 };
 
 bool detect_collision(bounding_box_t a, bounding_box_t b);
@@ -77,7 +80,8 @@ bool detect_collision(bounding_box_t a, bounding_box_t b);
 extern float screen_zoom, screen_center_x, screen_center_y;
 void reset_screen();
 void camera_tick();
-void generate_objects();
+void make_arrow();
+void fire_cannon();
 
 // ---- Colors ----
 extern const color_t COLOR_RED;
@@ -88,5 +92,7 @@ extern const color_t COLOR_SEA;
 extern const color_t COLOR_ISLAND;
 extern const color_t COLOR_GUN;
 extern const color_t COLOR_STAND;
+extern const color_t COLOR_YELLOW;
+extern const color_t COLOR_PARACHUTE;
 
 #endif

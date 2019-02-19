@@ -11,6 +11,13 @@ Airplane::Airplane(float x, float y, float z, color_t color, int n, float a, flo
     
     GLfloat vertex_buffer_data[12 * 3 * n];
 
+	this->box.len_x = (a + b) / 2;
+    this->box.len_y = (a + b) / 2;
+    this->box.len_z = l;
+    this->box.x = this->position.x;
+    this->box.y = this->position.y;
+    this->box.z = this->position.z;
+
 	for(int i=0; i<12 * 3 * n;)
 	{
 		vertex_buffer_data[i++] = 0.0f;
@@ -91,5 +98,7 @@ void Airplane::set_rotation(float x, float y, float z) {
 }
 
 void Airplane::tick() {
-    return;
+    this->box.x = this->position.x;
+    this->box.y = this->position.y;
+    this->box.z = this->position.z;
 }

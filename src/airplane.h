@@ -10,6 +10,7 @@ public:
     Airplane(float x, float y, float z, color_t color, int n, float a, float b, float l);
     glm::vec3 position, rotation;
     float length;
+    bounding_box_t box;
     void draw(glm::mat4 VP, float rot_x, float rot_y, float rot_z);
     void set_position(float x, float y, float z);
     void set_rotation(float x, float y, float z);

@@ -6,7 +6,7 @@
 Timer::Timer(double interval) {
     prev = 0;
     this->interval = interval;
-    this->frame = 0;
+    this->seconds = 0;
     this->count = 0;
 }
 
@@ -17,7 +17,7 @@ bool Timer::processTick() {
         ++count;
         if(count % 60 == 0)
         {
-            ++frame;
+            ++seconds;
             count = 0;
         }
         return true;

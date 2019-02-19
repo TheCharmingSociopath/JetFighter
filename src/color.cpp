@@ -9,3 +9,5 @@ const color_t COLOR_SEA = { 52, 185, 240 };
 const color_t COLOR_ISLAND = { 141, 183, 92 };
 const color_t COLOR_GUN = { 15, 63, 49 };
 const color_t COLOR_STAND = { 91, 67, 51 };
+const color_t COLOR_YELLOW = { 251, 209, 13 };
+const color_t COLOR_PARACHUTE = { 148, 58, 54 };
