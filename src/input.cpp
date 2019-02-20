@@ -67,10 +67,10 @@ void mouseButton(GLFWwindow *window, int button, int action, int mods) {
     switch (button) {
     case GLFW_MOUSE_BUTTON_LEFT:
         if (action == GLFW_PRESS) {
-            // Do something
+            m_missile = true;
             return;
         } else if (action == GLFW_RELEASE) {
-            // Do something
+            m_bomb = true;
         }
         break;
     // case GLFW_MOUSE_BUTTON_RIGHT:
@@ -84,5 +84,12 @@ void mouseButton(GLFWwindow *window, int button, int action, int mods) {
 }
 
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset) {
-    // Do something
+    if (yoffset < 0)
+        arcball_zoom(-1);
+    else if (yoffset > 0)
+        arcball_zoom(1);
 }
+
+// void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
+//     arcball(xpos, ypos);
+// }

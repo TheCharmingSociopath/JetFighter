@@ -9,14 +9,18 @@
 #include "arrow.h"
 #include "ring.h"
 #include "parachute.h"
+#include "fuel.h"
+#include "missile.h"
 
 #define GLM_ENABLE_EXPERIMENTAL
 
 using namespace std;
 
-GLMatrices Matrices;
+GLMatrices Matrices, Mat_ortho;
 GLuint     programID;
 GLFWwindow *window;
+
+bool m_missile = false, m_bomb = false;
 
 Airplane plane;
 Sea sea;
@@ -26,6 +30,9 @@ Score p_score, p_fuel, p_altitude, p_speed;
 vector <Cannon> cannon;
 vector <Ring> rings;
 vector <Parachute> parachutes;
+vector <Missile> missiles;
+Fuel refuel;
+#define RADIUS 100
 
 float jet_x = 0, jet_y = 100, jet_z = 0, jet_rot_x = 0, jet_rot_y = 0, jet_rot_z = 1;
 float screen_center_x = jet_x, screen_center_y = jet_y, screen_center_z = jet_z;
@@ -37,7 +44,7 @@ arrow_y = (screen_center_y + camera_center_y) / 2,
 arrow_z = (screen_center_z + camera_center_z) / 2;
 
 float fovy = 45.0f, aspect = 1.0f, zNear = 0.1f, zFar = 500.0f;
-int camera_modes = 0, score = 0, fuel = 100, altitude = jet_y, cannon_fire_time;
+int camera_modes = 0, score = 0, fuel = 100, altitude = jet_y, lives = 5, cannon_fire_time;
 int ISLANDS_NUMBER = 80, active_island;
 
 /*  0: follow-cam view
@@ -68,13 +75,14 @@ void draw() {
 
     // Compute Camera matrix (view)
     Matrices.view = glm::lookAt( eye, target, up ); // Rotating Camera for 3D
+    Mat_ortho.view = glm::lookAt( glm::vec3(0, 0, -5), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0) ); // Rotating Camera for 3D
     // Don't change unless you are sure!!
     // Matrices.view = glm::lookAt(glm::vec3(0, 0, 3), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0)); // Fixed camera for 2D (ortho) in XY plane
 
     // Compute ViewProject matrix as view/camera might not be changed for this frame (basic scenario)
     // Don't change unless you are sure!!
     glm::mat4 VP = Matrices.projection * Matrices.view;
-    glm::mat4 ortho_VP = Matrices.ortho_projection * Matrices.view;
+    glm::mat4 ortho_VP = Mat_ortho.projection * Mat_ortho.view;
 
     // Send our transformation to the currently bound shader, in the "MVP" uniform
     // For each model you render, since the MVP will be different (at least the M part)
@@ -85,6 +93,7 @@ void draw() {
     sea.draw(VP);
     arrow.draw(VP, arrow_rot);
     plane.draw(VP, jet_rot_x, jet_rot_y, jet_rot_z);
+    refuel.draw(VP);
     for (int i=0; i<islands.size(); ++i)
     {
         islands[i].draw(VP);
@@ -97,17 +106,26 @@ void draw() {
     {
         parachutes[i].draw(VP);
     }
+    for (int i=0; i<missiles.size(); ++i)
+    {
+        missiles[i].draw(VP);
+    }
     for (int i=0; i<cannon.size(); ++i)
     {
         cannon[i].draw(VP);
         // cout << cannon[i].position.x << " " << cannon[i].position.y << " " << cannon[i].position.z << endl;
     }
-    p_score.set_position(0, 30, 0);
+    // arrow.set_position(0,0,0);
+    // arrow.draw(ortho_VP, arrow_rot);
+
+    p_score.set_position(0, 0, 0);
     p_score.print_score(score, ortho_VP);
-    p_fuel.set_position(screen_center_x - 4, screen_center_y - 4, screen_center_z);
-    p_fuel.print_score(score, ortho_VP);
-    p_altitude.set_position(screen_center_x + 4, screen_center_y - 4, screen_center_z);
-    p_altitude.print_score(score, ortho_VP);
+    p_fuel.set_position(3, 3, 0);
+    p_fuel.print_score(fuel, ortho_VP);
+    p_altitude.set_position(-3, -3, 0);
+    p_altitude.print_score(altitude, ortho_VP);
+    // cout << "Draw begin" << endl;
+    // cout << "Draw end" << endl;
 }
 
 void tick_input(GLFWwindow *window) {
@@ -151,41 +169,38 @@ void tick_input(GLFWwindow *window) {
         cam_press = true;
     }
     else if (cam_press) {
-        camera_modes = (camera_modes + 1) % 4;
+        camera_modes = (camera_modes + 1) % 5;
         cam_press = false;
     }
+    if (m_bomb)
+    {
+        missiles.push_back(Missile(jet_x, jet_y, jet_z));
+        m_bomb = false;
+    }
+    // if (m_bomb)
+    // {
+    //     bombs.push_back(Missile(jet_x, jet_y, jet_z));
+    //     m_bomb = false;
+    // }
 }
 
 void tick_elements() {
+    // cout << "tick begin" << endl;
+
     altitude = jet_y;
     plane.tick();
+    refuel.tick();
     camera_tick();
     plane.set_position(jet_x, jet_y, jet_z);
     sea.tick();
-    if (t60.seconds % 15 == 0 && t60.count == 0)
-    {
-        parachutes.push_back(Parachute (plane.position.x + 50, plane.position.z + 50));
-        parachutes.push_back(Parachute (plane.position.x + 50, plane.position.z - 50));
-        parachutes.push_back(Parachute (plane.position.x - 50, plane.position.z + 50));
-        parachutes.push_back(Parachute (plane.position.x - 50, plane.position.z - 50));
-    }
-    if (t60.seconds % 2 == 0 and t60.count == 0)
-    {
-        parachutes.push_back(Parachute (rand() % 1000, rand() % 1000));
-        rings.push_back( Ring(rand() % 1000, rand() % 100, rand() % 1000) );
-    }
 
     if (t60.seconds % 2 == 0 and t60.count == 0)
     {
         ++score;
         --fuel;
+        cout << "Fuel: " << fuel << " Score: " << score << " Altitude: " << altitude << " Lives: " << lives << endl;
     }
-    for (int i=0; i<parachutes.size(); ++i)
-    {
-        parachutes[i].tick();
-        if (parachutes[i].position.y <= 5)
-            parachutes.erase(parachutes.begin() + i);
-    }
+
     if (!cannon_active)
     {
         int active_island = rand() % ISLANDS_NUMBER;
@@ -193,26 +208,12 @@ void tick_elements() {
         cannon_active = true;
         islands[active_island].activation_time = t60.seconds;
     }
-
-    for(int i=0; i<rings.size(); ++i)
-    {
-        if( detect_collision (rings[i].box, plane.box) )
-        {
-            score += 5;
-            rings.erase(rings.begin() + i);
-        }
-    }
-
+    
+    generate_objects();
     make_arrow();
     fire_cannon();
-    for(int i=0; i<cannon.size(); ++i)
-    {
-        cannon[i].position.x += 10.0f * sin(cannon[i].theta) * sin(cannon[i].phi);
-        cannon[i].position.y += 10.0f * cos(cannon[i].theta);
-        cannon[i].position.z += 10.0f * sin(cannon[i].theta) * cos(cannon[i].phi);
-        // cout << i << " " << cannon[i].position.x << " " << cannon[i].position.y << " " << cannon[i].position.z << endl;
-        // cout << cannon[i].theta << " " << cannon[i].phi << endl;
-    }
+    collisions();
+    // cout << "tick end" << endl;
 }
 
 /* Initialize the OpenGL rendering properties */
@@ -224,15 +225,16 @@ void initGL(GLFWwindow *window, int width, int height) {
     plane = Airplane(jet_x, jet_y, jet_z, COLOR_RED, 5, 0, 1, 4);
     sea = Sea(0, 0, 0, COLOR_SEA);
     arrow = Arrow(arrow_x, arrow_y, arrow_z);
+    refuel = Fuel(arrow_x, 100, arrow_z);
 
     for (int i=0; i<ISLANDS_NUMBER / 4; ++i)
     {
-        islands.push_back( Island(rand() % 1000, rand() % 1000, COLOR_ISLAND) );
-        islands.push_back( Island(rand() % 1000, - (rand() % 1000), COLOR_ISLAND) );
-        islands.push_back( Island(-(rand() % 1000), rand() % 1000, COLOR_ISLAND) );
-        islands.push_back( Island(-(rand() % 1000), - (rand() % 1000), COLOR_ISLAND) );
+        islands.push_back( Island(rand() % RADIUS, rand() % RADIUS, COLOR_ISLAND) );
+        islands.push_back( Island(rand() % RADIUS, - (rand() % RADIUS), COLOR_ISLAND) );
+        islands.push_back( Island(-(rand() % RADIUS), rand() % RADIUS, COLOR_ISLAND) );
+        islands.push_back( Island(-(rand() % RADIUS), - (rand() % RADIUS), COLOR_ISLAND) );
     }
-    p_score = Score(camera_center_x, camera_center_y, camera_center_z + 5, COLOR_BLACK);
+    p_score = Score(0.0, 0.0, 0.0, COLOR_BLACK);
     p_fuel = Score(screen_center_x, screen_center_x, screen_center_z, COLOR_BLACK);
     p_altitude = Score(camera_center_x + 4, camera_center_y - 4, camera_center_z, COLOR_BLACK);
 
@@ -240,6 +242,7 @@ void initGL(GLFWwindow *window, int width, int height) {
     programID = LoadShaders("Sample_GL.vert", "Sample_GL.frag");
     // Get a handle for our "MVP" uniform
     Matrices.MatrixID = glGetUniformLocation(programID, "MVP");
+    Mat_ortho.MatrixID = glGetUniformLocation(programID, "MVP");
 
     reshapeWindow (window, width, height);
 
@@ -294,12 +297,12 @@ bool detect_collision(bounding_box_t a, bounding_box_t b) {
 }
 
 void reset_screen() {
-    float top    = screen_center_y + 10 / screen_zoom;
-    float bottom = screen_center_y - 10 / screen_zoom;
-    float left   = screen_center_x - 10 / screen_zoom;
-    float right  = screen_center_x + 10 / screen_zoom;
+    float top    = screen_center_y + 8 / screen_zoom;
+    float bottom = screen_center_y - 8 / screen_zoom;
+    float left   = screen_center_x - 8 / screen_zoom;
+    float right  = screen_center_x + 8 / screen_zoom;
     Matrices.projection = glm::perspective(fovy, aspect, zNear, zFar);
-    Matrices.ortho_projection = glm::ortho(left, right, bottom, top, 0.1f, 500.0f);
+    Mat_ortho.projection = glm::ortho(left, right, bottom, top, 0.1f, 500.0f);
 }
 
 /*  0: follow-cam view
@@ -308,6 +311,16 @@ void reset_screen() {
     3: plane view
     4: helicopter-cam view
 */
+
+void arcball_zoom (double direction)
+{
+    if (camera_modes != 4) return;
+
+    if (direction == -1)
+        screen_zoom -= 0.1f;
+    else
+        screen_zoom += 0.1f;
+}
 
 void camera_tick()
 {
@@ -335,6 +348,9 @@ void camera_tick()
             screen_center_z = jet_z + 10 * cos(plane.rotation.y * M_PI / 180);
             break;
         case 4:
+            screen_center_x = jet_x;
+            screen_center_y = jet_y;
+            screen_center_z = jet_z;
             break;
     }
 
@@ -378,7 +394,13 @@ void camera_tick()
             camera_center_z = jet_z + (plane.length / 2);
             break;
         case 4:
-            /* code */
+            double x, y, x1, y1;
+            glfwGetCursorPos(window, &x, &y);
+            x1 = (x - 400) / 40;
+            y1 = (y - 400) / 40;
+            camera_center_x = jet_x + x1 / screen_zoom;
+            camera_center_y = jet_y + y1 / screen_zoom;
+            camera_center_z = jet_z - sqrt(200 - x1*x1 - y1*y1) / screen_zoom;
             break;
     }
 
@@ -405,6 +427,9 @@ void camera_tick()
             arrow_z = jet_z + 10 * cos(plane.rotation.y * M_PI / 180);
             break;
         case 4:
+            arrow_x = jet_x + 10 * sin(plane.rotation.y * M_PI / 180);
+            arrow_y = jet_y;
+            arrow_z = jet_z + 10 * cos(plane.rotation.y * M_PI / 180);
             break;
     }
     
@@ -420,10 +445,10 @@ void make_arrow()
     i_y = 15;
     r = sqrt(((i_x - arrow_x) * (i_x - arrow_x)) + ((i_y - arrow_y) * (i_y - arrow_y)) + ((i_z - arrow_z) * (i_z - arrow_z)));
 
-    arrow_rot = acos((i_z - arrow_z) / r) * 180 / M_PI;
-
-    if (i_x < arrow_x)
-        arrow_rot *= -1.0f;
+    arrow_rot = atan2((i_z - arrow_z), (i_x - arrow_x)) * 180 / M_PI;
+    arrow.dir = glm::normalize(glm::vec3(-i_x + jet_x, -i_y + jet_y, -i_z + jet_z));
+    // if (i_x < arrow_x)
+        // arrow_rot *= -1.0f;
 }
 
 void fire_cannon()
@@ -444,4 +469,101 @@ void fire_cannon()
         cout << jet_x << " " << jet_y << " " << jet_z << " " << i_x << " " <<i_y + 75 << " " << i_z << endl;
         cannon_fire_time = t60.seconds;
     }
+    for(int i=0; i<cannon.size(); ++i)
+    {
+        cannon[i].position.x += 10.0f * sin(cannon[i].theta) * sin(cannon[i].phi);
+        cannon[i].position.y += 10.0f * cos(cannon[i].theta);
+        cannon[i].position.z += 10.0f * sin(cannon[i].theta) * cos(cannon[i].phi);
+        // cout << i << " " << cannon[i].position.x << " " << cannon[i].position.y << " " << cannon[i].position.z << endl;
+        // cout << cannon[i].theta << " " << cannon[i].phi << endl;
+    }
+}
+
+void collisions()
+{
+    // cout << "collision begin" << endl;
+
+    for(int i=0; i<rings.size(); ++i)
+    {
+        if( detect_collision (rings[i].box, plane.box) )
+        {
+            score += 5;
+            rings.erase(rings.begin() + i);
+        }
+    }
+
+    if( detect_collision (refuel.box, plane.box) )
+    {
+        fuel += 10;
+        refuel.set_position(100, 100, -100);
+        if (fuel > 100) fuel = 100;
+        // cout << "COLLOSION" << endl;
+    }
+
+    for (int i=0; i<parachutes.size(); ++i)
+    {
+        parachutes[i].tick();
+        if (parachutes[i].position.y <= 5)
+            parachutes.erase(parachutes.begin() + i);
+
+        if (detect_collision(parachutes[i].box, plane.box))
+        {
+            parachutes.erase(parachutes.begin() + i);
+            kill_plane();
+        }
+    }
+
+    for (int i=0; i<missiles.size(); ++i)
+    {
+        missiles[i].tick();
+        if (missiles[i].position.y <= 5)
+            missiles.erase(missiles.begin() + i);
+
+        if (detect_collision(missiles[i].box, plane.box))
+        {
+            missiles.erase(missiles.begin() + i);
+            cannon_active = false;
+            islands.erase(islands.begin() + active_island);
+        }
+    }
+    // cout << "collision end" << endl;
+}
+
+void generate_objects()
+{
+    if (t60.seconds % 15 == 0 && t60.count == 0)
+    {
+        parachutes.push_back(Parachute (plane.position.x + 50, plane.position.z + 50));
+        parachutes.push_back(Parachute (plane.position.x + 50, plane.position.z - 50));
+        parachutes.push_back(Parachute (plane.position.x - 50, plane.position.z + 50));
+        parachutes.push_back(Parachute (plane.position.x - 50, plane.position.z - 50));
+        refuel = Fuel(arrow_x, jet_y, arrow_z + 10);
+    }
+    if (t60.seconds % 2 == 0 and t60.count == 0)
+    {
+        parachutes.push_back(Parachute (rand() % 1000, rand() % 1000));
+        rings.push_back( Ring(rand() % 1000, rand() % 100, rand() % 1000) );
+    }
+}
+
+void kill_plane()
+{
+    // cout << "kill begin" << endl;
+
+//     // while (plane.position.y > 10)
+//     // {
+//         // plane.position.y -= 0.1f;
+//         // draw();
+//     // }
+    jet_x = 0;
+    jet_y = 100;
+    jet_z = 0;
+    jet_rot_x = 0;
+    jet_rot_y = 0;
+    jet_rot_z = 1;
+    --lives;
+    fuel = 100;
+    score -= 50;
+    if  (score < 0) score = 0;
+    // cout << "kill end" << endl;
 }

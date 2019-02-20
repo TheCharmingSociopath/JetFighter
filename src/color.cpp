@@ -11,3 +11,5 @@ const color_t COLOR_GUN = { 15, 63, 49 };
 const color_t COLOR_STAND = { 91, 67, 51 };
 const color_t COLOR_YELLOW = { 251, 209, 13 };
 const color_t COLOR_PARACHUTE = { 148, 58, 54 };
+const color_t COLOR_FUEL = { 65, 198, 49 };
+const color_t COLOR_MISSILE = { 229, 198, 50 };

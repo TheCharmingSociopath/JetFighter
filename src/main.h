@@ -34,6 +34,7 @@ void keyboard(GLFWwindow *window, int key, int scancode, int action, int mods);
 void keyboardChar(GLFWwindow *window, unsigned int key);
 void mouseButton(GLFWwindow *window, int button, int action, int mods);
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
+// void cursor_position_callback(GLFWwindow* window, double xpos, double ypos);
 
 // other_handlers.cpp
 void error_callback(int error, const char *description);
@@ -54,7 +55,6 @@ typedef struct VAO VAO;
 
 struct GLMatrices {
     glm::mat4 projection;
-    glm::mat4 ortho_projection;
     glm::mat4 model;
     glm::mat4 view;
     GLuint    MatrixID;
@@ -76,12 +76,18 @@ struct bounding_box_t {
 };
 
 bool detect_collision(bounding_box_t a, bounding_box_t b);
+extern bool m_missile, m_bomb;
 
 extern float screen_zoom, screen_center_x, screen_center_y;
 void reset_screen();
 void camera_tick();
 void make_arrow();
 void fire_cannon();
+void collisions();
+void generate_objects();
+void kill_plane();
+void arcball(double x, double y);
+void arcball_zoom(double direction);
 
 // ---- Colors ----
 extern const color_t COLOR_RED;
@@ -94,5 +100,7 @@ extern const color_t COLOR_GUN;
 extern const color_t COLOR_STAND;
 extern const color_t COLOR_YELLOW;
 extern const color_t COLOR_PARACHUTE;
+extern const color_t COLOR_FUEL;
+extern const color_t COLOR_MISSILE;
 
 #endif

@@ -1,21 +1,22 @@
 #include "main.h"
 #include "frustum.h"
-#ifndef ARROW_H
-#define ARROW_H
+#ifndef MISSILE_H
+#define MISSILE_H
 
 
-class Arrow {
+class Missile {
 public:
-    Arrow() {}
-    Arrow(float x, float y, float z);
+    Missile() {}
+    Missile(float x, float y, float z);
     glm::vec3 position, dir;
     float rotation;
     Frustum body;
-    void draw(glm::mat4 VP, float rotation);
+    bounding_box_t box;
+    void draw(glm::mat4 VP);
     void set_position(float x, float y, float z);
     void tick();
 private:
     VAO *object;
 };
 
-#endif // ARROW_H
+#endif // MISSILE_H

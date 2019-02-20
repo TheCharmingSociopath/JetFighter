@@ -181,7 +181,8 @@ void Score::print_score(long long int score, glm::mat4 VP)
 {
     if(score == 0)
     {
-        Score::draw(VP, 0);
+        std::cout << score << std::endl;
+        // Score::draw(VP, 0);
     }
     while (score != 0)
     {
