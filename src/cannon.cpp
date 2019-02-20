@@ -6,7 +6,10 @@
 double Cannon_gravity = 0.5, tim = (double) 1/60;
 
 Cannon::Cannon(float x, float y, float z, float t, float p) {
-    this->position = glm::vec3(x, y, 0);
+    this->position = glm::vec3(x, y, z);
+    this->box.len_x = 2;
+    this->box.len_y = 2;
+    this->box.len_z = 2;
     this->rotation = 0;
     this->theta = t;
     this->phi = p;
@@ -25,5 +28,7 @@ void Cannon::set_position(float x, float y, float z) {
 }
 
 void Cannon::tick() {
-    
+    this->box.x = this->position.x;
+    this->box.y = this->position.y;
+    this->box.z = this->position.z;
 }

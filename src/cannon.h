@@ -12,6 +12,7 @@ public:
     Cannon(float x, float y, float z, float t, float p);
     glm::vec3 position;
     Sphere sphere;
+    bounding_box_t box;
     float rotation, speed_y, theta, phi;
     void draw(glm::mat4 VP);
     void set_position(float x, float y, float z);

@@ -32,7 +32,7 @@ vector <Ring> rings;
 vector <Parachute> parachutes;
 vector <Missile> missiles;
 Fuel refuel;
-#define RADIUS 100
+#define RADIUS 1000
 
 float jet_x = 0, jet_y = 100, jet_z = 0, jet_rot_x = 0, jet_rot_y = 0, jet_rot_z = 1;
 float screen_center_x = jet_x, screen_center_y = jet_y, screen_center_z = jet_z;
@@ -214,6 +214,14 @@ void tick_elements() {
     make_arrow();
     fire_cannon();
     collisions();
+
+    for(int i=0; i<cannon.size(); ++i)
+    {
+        cannon[i].position.x += 1.0f * sin(cannon[i].theta) * sin(cannon[i].phi);
+        cannon[i].position.y += 1.0f * cos(cannon[i].theta);
+        cannon[i].position.z += 1.0f * sin(cannon[i].theta) * cos(cannon[i].phi);
+    }
+
     // cout << "tick end" << endl;
 }
 
@@ -460,23 +468,16 @@ void fire_cannon()
     i_y = islands[active_island].position.y,
     r = sqrt(((i_x - jet_x) * (i_x - jet_x)) + ((i_y - jet_y) * (i_y - jet_y)) + ((i_z - jet_z) * (i_z - jet_z))),
     r1 = sqrt(((i_x - jet_x) * (i_x - jet_x)) + ((i_z - jet_z) * (i_z - jet_z)));
+    // r2 = sqrt(((i_x - jet_x) * (i_x - jet_x)) + ((i_y - jet_y) * (i_y - jet_y)));
     if(r < 400)
     {
         float theta = acos((jet_y - i_y) / r),
         phi = acos((jet_z - i_z) / r1);
         if (i_x > jet_x)
             phi *= -1.0f;
-        cannon.push_back( Cannon(i_x, i_y + 75, i_z, theta, phi) );
+        cannon.push_back( Cannon(i_x, 15, i_z, theta, phi) );
         cout << jet_x << " " << jet_y << " " << jet_z << " " << i_x << " " <<i_y + 75 << " " << i_z << endl;
         cannon_fire_time = t60.seconds;
-    }
-    for(int i=0; i<cannon.size(); ++i)
-    {
-        cannon[i].position.x += 10.0f * sin(cannon[i].theta) * sin(cannon[i].phi);
-        cannon[i].position.y += 10.0f * cos(cannon[i].theta);
-        cannon[i].position.z += 10.0f * sin(cannon[i].theta) * cos(cannon[i].phi);
-        // cout << i << " " << cannon[i].position.x << " " << cannon[i].position.y << " " << cannon[i].position.z << endl;
-        // cout << cannon[i].theta << " " << cannon[i].phi << endl;
     }
 }
 
@@ -514,6 +515,19 @@ void collisions()
         }
     }
 
+    for (int i=0; i<cannon.size(); ++i)
+    {
+        cannon[i].tick();
+        if (cannon[i].position.y >= 150)
+            cannon.erase(cannon.begin() + i);
+
+        if (detect_collision(cannon[i].box, plane.box))
+        {
+            cannon.erase(cannon.begin() + i);
+            kill_plane();
+        }
+    }
+
     for (int i=0; i<missiles.size(); ++i)
     {
         missiles[i].tick();
@@ -522,7 +536,7 @@ void collisions()
 
         if (detect_collision(missiles[i].box, islands[active_island].box))
         {
-            cout << "COL" << endl;
+            // cout << "COL" << endl;
             missiles.erase(missiles.begin() + i);
             cannon_active = false;
             islands[active_island].active = false;
@@ -552,13 +566,6 @@ void generate_objects()
 
 void kill_plane()
 {
-    // cout << "kill begin" << endl;
-
-//     // while (plane.position.y > 10)
-//     // {
-//         // plane.position.y -= 0.1f;
-//         // draw();
-//     // }
     jet_x = 0;
     jet_y = 100;
     jet_z = 0;
