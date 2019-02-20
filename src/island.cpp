@@ -9,6 +9,14 @@ Island::Island(float x, float z, color_t color) {
     this->sphere = Sphere (x, this->y, z, this->radius, color);
     this->stand = Frustum (x, 9, z, COLOR_STAND, 4, 6, 6, 6);
     this->gun = Frustum (x, 15, z, COLOR_GUN, 100, 2.0f, 2.0f, 4.5f);
+
+    this->box.len_x = 10;
+    this->box.len_y = 10;
+    this->box.len_z = 10;
+
+    this->box.x = this->position.x;
+    this->box.y = 5;
+    this->box.z = this->position.z;
 }
 
 void Island::draw(glm::mat4 VP) {
@@ -25,4 +33,7 @@ void Island::set_position(float x, float y, float z) {
 }
 
 void Island::tick() {
+    this->box.x = this->position.x;
+    this->box.y = 5;
+    this->box.z = this->position.z;
 }

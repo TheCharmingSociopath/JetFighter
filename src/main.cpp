@@ -194,6 +194,8 @@ void tick_elements() {
     plane.set_position(jet_x, jet_y, jet_z);
     sea.tick();
 
+    // islands[active_island].tick();
+
     if (t60.seconds % 2 == 0 and t60.count == 0)
     {
         ++score;
@@ -203,10 +205,9 @@ void tick_elements() {
 
     if (!cannon_active)
     {
-        int active_island = rand() % ISLANDS_NUMBER;
+        active_island = rand() % ISLANDS_NUMBER;
         islands[active_island].active = true;
         cannon_active = true;
-        islands[active_island].activation_time = t60.seconds;
     }
     
     generate_objects();
@@ -516,15 +517,18 @@ void collisions()
     for (int i=0; i<missiles.size(); ++i)
     {
         missiles[i].tick();
-        if (missiles[i].position.y <= 5)
-            missiles.erase(missiles.begin() + i);
+        cout << missiles[i].box.x << " " << missiles[i].box.y << " " << missiles[i].box.z << endl;
+        cout << islands[active_island].box.x << " " << islands[active_island].box.y << " " << islands[active_island].box.z << endl;
 
-        if (detect_collision(missiles[i].box, plane.box))
+        if (detect_collision(missiles[i].box, islands[active_island].box))
         {
+            cout << "COL" << endl;
             missiles.erase(missiles.begin() + i);
             cannon_active = false;
-            islands.erase(islands.begin() + active_island);
+            islands[active_island].active = false;
         }
+        if (missiles[i].position.y <= -15)
+            missiles.erase(missiles.begin() + i);
     }
     // cout << "collision end" << endl;
 }

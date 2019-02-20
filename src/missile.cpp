@@ -4,12 +4,12 @@
 #define GLM_ENABLE_EXPERIMENTAL
 
 Missile::Missile(float x, float y, float z) {
-    this->box.len_x = 0.2f;
-    this->box.len_y = 0.2f;
+    this->box.len_x = 2;
+    this->box.len_y = 2;
     this->box.len_z = 2;
 
     this->position = glm::vec3(x, y, z);
-    this->body = Frustum(x, y, z, COLOR_MISSILE, 100, 0, 0.2f, 2);
+    this->body = Frustum(x, y, z, COLOR_MISSILE, 100, 0.5f, 0.5f, 2);
     this->body.rotation = glm::vec3(0, 0, 0);
 }
 

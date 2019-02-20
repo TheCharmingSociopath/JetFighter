@@ -11,6 +11,7 @@ public:
     Island(float x, float z, color_t color);
     glm::vec3 position;
     float radius = 50, y = -40, rotation;
+    bounding_box_t box;
     int activation_time = 0;
     Sphere sphere;
     bool active = false;
